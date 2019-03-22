@@ -186,7 +186,6 @@ public class MainActivity extends AppCompatActivity {
 
                 m_shoudContinue = true;
 
-                /*
                 String filename = getFileName();
                 if (filename == null) {
                     return;  //todo: show alert dialog
@@ -230,7 +229,8 @@ public class MainActivity extends AppCompatActivity {
 
                 m_writeThread = new AudioWriter(info);
                 m_writeThread.start();
-                */
+
+                /*
                 Thread thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -238,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 thread.start();
+                */
 
                 setBtnState(false);
             }
@@ -248,7 +249,6 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 m_shoudContinue = false;
 
-                /*
                 m_recorder.stopAction();
                 m_writeThread.stopAction();
 
@@ -262,7 +262,6 @@ public class MainActivity extends AppCompatActivity {
 
                 m_recorder = null;
                 m_writeThread = null;
-                */
 
                 if (m_filepath != null && m_filepath != "") {
                     m_txtFilepath.setText(m_filepath);
@@ -376,59 +375,6 @@ public class MainActivity extends AppCompatActivity {
 
         //while(m_shoudContinue)
     }
-
-    /*
-    private void recordAudio(final int buffersize) throws InterruptedException {
-
-
-        m_recordThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if (m_audioRecord == null || m_audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
-                    Log.e(TAG, "AudioRecord not initilized, return!");
-                    return;
-                }
-
-                short[] audioBuffer = new short[buffersize / 2];
-
-                m_audioRecord.startRecording();
-                Log.i(TAG, "start recording.");
-
-                while (m_shoudContinue) {
-                    int perRead = m_audioRecord.read(audioBuffer, 0, audioBuffer.length);
-
-                    try {
-                        synchronized (info) {
-                            while (info.isDataReady()) {
-                                info.wait();  //wait AudioWriter to finish writing to disk
-                            }
-                            info.setBuffer(audioBuffer, perRead, false);
-                            info.notify();
-                        }
-                    } catch (InterruptedException ie) {
-                        ie.printStackTrace();
-                        assert (false);
-                    }
-
-                }
-
-                m_audioRecord.stop();
-                m_audioRecord.release();
-                m_audioRecord = null;
-
-
-                Log.i(TAG, String.format("recording stopped"));
-            }
-        });
-
-        m_recordThread.start();
-
-        //writeThread = new Thad(new AudioWriter(info));
-        m_writeThread = new AudioWriter(info);
-        m_writeThread.start();
-
-    }
-    */
 
     private String getFileName() {
 

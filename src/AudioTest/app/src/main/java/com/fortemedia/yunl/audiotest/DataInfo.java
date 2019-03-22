@@ -26,15 +26,18 @@ public class DataInfo {
     @len: size in short
      */
     public void setBuffer(short[] srcBuffer, int len, boolean isBigEndian) {
+        /*
+        watch out for the array index
+         */
         if (isBigEndian) {
             for (int i = 0; i < len; i++) {
-                m_buffer[i] = (byte) ((srcBuffer[i] >> 8) & 0xff);
-                m_buffer[i + 1] = (byte) (srcBuffer[i] & 0xff);
+                m_buffer[2 * i] = (byte) ((srcBuffer[i] >> 8) & 0xff);
+                m_buffer[2 * i + 1] = (byte) (srcBuffer[i] & 0xff);
             }
         } else {
             for (int i = 0; i < len; i++) {
-                m_buffer[i] = (byte) (srcBuffer[i] & 0xff);
-                m_buffer[i + 1] = (byte) ((srcBuffer[i] >> 8) & 0xff);
+                m_buffer[2 * i] = (byte) (srcBuffer[i] & 0xff);
+                m_buffer[2 * i + 1] = (byte) ((srcBuffer[i] >> 8) & 0xff);
             }
         }
 
