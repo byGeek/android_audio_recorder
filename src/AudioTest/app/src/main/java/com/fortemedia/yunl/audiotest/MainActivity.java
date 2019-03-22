@@ -17,6 +17,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -111,15 +112,15 @@ public class MainActivity extends AppCompatActivity {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
         };
 
-        if(!hasPermission(this, permissions)){
+        if (!hasPermission(this, permissions)) {
             ActivityCompat.requestPermissions(this, permissions, PERMISSIONS_REQUEST_RECORD_AUDIO);
         }
     }
 
-    public static boolean hasPermission(Context context, String... permissions){
-        if(context != null && permissions != null){
-            for(String permission : permissions){
-                if(ActivityCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED){
+    public static boolean hasPermission(Context context, String... permissions) {
+        if (context != null && permissions != null) {
+            for (String permission : permissions) {
+                if (ActivityCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
                     return false;
                 }
             }
@@ -185,6 +186,7 @@ public class MainActivity extends AppCompatActivity {
 
                 m_shoudContinue = true;
 
+                /*
                 String filename = getFileName();
                 if (filename == null) {
                     return;  //todo: show alert dialog
@@ -228,6 +230,14 @@ public class MainActivity extends AppCompatActivity {
 
                 m_writeThread = new AudioWriter(info);
                 m_writeThread.start();
+                */
+                Thread thread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        record();
+                    }
+                });
+                thread.start();
 
                 setBtnState(false);
             }
@@ -238,6 +248,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 m_shoudContinue = false;
 
+                /*
                 m_recorder.stopAction();
                 m_writeThread.stopAction();
 
@@ -251,6 +262,7 @@ public class MainActivity extends AppCompatActivity {
 
                 m_recorder = null;
                 m_writeThread = null;
+                */
 
                 if (m_filepath != null && m_filepath != "") {
                     m_txtFilepath.setText(m_filepath);
@@ -288,6 +300,81 @@ public class MainActivity extends AppCompatActivity {
         } else if (Build.VERSION.SDK_INT >= 21) {
             finishAndRemoveTask();
         }
+    }
+
+    private void record() {
+
+        int bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG_MASK, AUDIO_FORMAT);
+        AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                SAMPLE_RATE,
+                CHANNEL_CONFIG_MASK,
+                AUDIO_FORMAT,
+                bufferSize);
+
+        if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+            assert (false);
+        }
+
+        short[] buffer = new short[bufferSize / 2];
+        byte[] tempBuffer = new byte[bufferSize];
+
+
+        FileOutputStream fileOutputStream = null;
+        BufferedOutputStream bufferedOutputStream = null;
+
+        String filename = getFileName();
+        if (filename == "") {
+            assert (false);
+        }
+
+        m_filepath = filename;
+
+        try {
+
+            fileOutputStream = new FileOutputStream(filename);
+            bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+
+
+            audioRecord.startRecording();
+
+            ByteBuffer byteBuffer = ByteBuffer.allocate(bufferSize);
+            while (m_shoudContinue) {
+                int perRead = audioRecord.read(buffer, 0, bufferSize / 2);
+
+
+                for (int i = 0; i < perRead; i++) {
+                    tempBuffer[2*i] = (byte) (buffer[i] & 0xff);
+                    tempBuffer[2*i + 1] = (byte) ((buffer[i] >> 8) & 0xff);
+                }
+
+                bufferedOutputStream.write(tempBuffer, 0, perRead*2);
+
+                /*
+                byteBuffer.rewind();
+                for (int i = 0; i < perRead; i++) {
+                    byteBuffer.put((byte) (buffer[i] & 0xff));
+                    byteBuffer.put((byte) ((buffer[i] >> 8) & 0xff));
+                }
+
+                bufferedOutputStream.write(byteBuffer.array(), 0, 2*perRead);
+                */
+
+            }
+
+            audioRecord.stop();
+            audioRecord.release();
+
+            bufferedOutputStream.flush();
+            bufferedOutputStream.close();
+            fileOutputStream.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            assert (false);
+        }
+
+
+        //while(m_shoudContinue)
     }
 
     /*
