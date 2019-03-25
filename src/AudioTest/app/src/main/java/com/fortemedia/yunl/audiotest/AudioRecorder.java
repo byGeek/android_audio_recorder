@@ -16,6 +16,7 @@ public class AudioRecorder extends Thread {
     private int m_bufferSize;
     private short[] m_buffer;//todo: short?
 
+    //todo: save file to app own directory, no external access required
     public AudioRecorder(AudioConfig config, DataInfo info) {
         m_audioConfig = config;
         m_info = info;

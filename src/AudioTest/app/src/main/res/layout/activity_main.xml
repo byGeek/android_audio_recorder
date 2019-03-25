@@ -19,9 +19,13 @@
 
             -->
 
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:text="Record:" android:id="@+id/txtRecord"/>
+
     <Button android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:id="@+id/btnStart"
             android:text="start"
+            app:layout_constraintTop_toBottomOf="@+id/txtRecord"
 
     />
 
@@ -29,12 +33,34 @@
             android:id="@+id/btnStop"
             android:text="stop"
             app:layout_constraintLeft_toRightOf="@+id/btnStart"
+            app:layout_constraintTop_toBottomOf="@+id/txtRecord"
     />
 
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
               android:id="@+id/txtFilepath"
-              android:text=""
-              app:layout_constraintTop_toBottomOf="@+id/btnStart"
+    />
+
+    <View style="@style/Divider.Horizontal" android:id="@+id/seperator_line"
+          app:layout_constraintTop_toBottomOf="@+id/btnStart"/>
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+              android:id="@+id/txtPlay"
+              android:text="Play:"
+              app:layout_constraintTop_toBottomOf="@+id/seperator_line"
+    />
+
+    <Button android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:id="@+id/btnPlayStart"
+            android:text="start"
+            app:layout_constraintTop_toBottomOf="@+id/txtPlay"
+
+    />
+
+    <Button android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:id="@+id/btnStopPlay"
+            android:text="stop"
+            app:layout_constraintLeft_toRightOf="@+id/btnPlayStart"
+            app:layout_constraintTop_toBottomOf="@+id/txtPlay"
     />
 
 

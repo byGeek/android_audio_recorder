@@ -38,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     private Button m_btn_start = null;
     private Button m_btn_stop = null;
     private TextView m_txtFilepath = null;
+    private Button m_btnPlayStart = null;
+    private Button m_btnStopPlay = null;
 
     private AudioRecord m_audioRecord = null;
 
@@ -67,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
     private String m_filepath = null;
 
     private Handler m_handler = null;
+
+    //todo: deal with app life cycle, such as onResume, onStop
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -177,7 +181,12 @@ public class MainActivity extends AppCompatActivity {
         m_btn_start = (Button) findViewById(R.id.btnStart);
         m_btn_stop = (Button) findViewById(R.id.btnStop);
         m_txtFilepath = (TextView) findViewById(R.id.txtFilepath);
+
+        m_btnPlayStart = (Button)findViewById(R.id.btnPlayStart);
+        m_btnStopPlay = (Button)findViewById(R.id.btnStopPlay);
     }
+
+    AudioPlayer m_audioPlayer = null;
 
     private void wireEvent() {
         m_btn_start.setOnClickListener(new View.OnClickListener() {
@@ -268,6 +277,35 @@ public class MainActivity extends AppCompatActivity {
                 }
                 setBtnState(true);
 
+            }
+        });
+
+        m_btnPlayStart.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                //todo: when in recording, disable play
+
+                if(m_audioPlayer == null) {
+                    AudioConfig config = AudioConfig.getDefaultConfig();
+
+                    //todo: just for test
+                    String filename = "/sdcard/fortemedia/test_2019_03_22_15_42_53.pcm";
+                    m_audioPlayer = new AudioPlayer(filename, config);
+                    m_audioPlayer.setCompleteListener(new TaskListener() {
+                        @Override
+                        public void completeCallback(Object obj) {
+                            m_audioPlayer = null;
+                        }
+                    });
+                    m_audioPlayer.play();
+                }
+            }
+        });
+
+        m_btnStopPlay.setOnClickListener((v)-> {
+            if(m_audioPlayer != null){
+                m_audioPlayer.stop();
+                m_audioPlayer = null;
             }
         });
     }
