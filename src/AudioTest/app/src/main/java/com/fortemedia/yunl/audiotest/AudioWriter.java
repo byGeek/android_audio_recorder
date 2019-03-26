@@ -24,6 +24,10 @@ public class AudioWriter extends Thread {
         m_continue = false;
     }
 
+    public String getFileName(){
+        return m_info.getFileName();
+    }
+
     @Override
     public void run() {
 

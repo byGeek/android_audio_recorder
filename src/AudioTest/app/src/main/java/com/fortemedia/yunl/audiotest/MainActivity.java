@@ -12,9 +12,15 @@ import android.os.*;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import java.io.BufferedOutputStream;
@@ -25,8 +31,11 @@ import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.logging.SimpleFormatter;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -40,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView m_txtFilepath = null;
     private Button m_btnPlayStart = null;
     private Button m_btnStopPlay = null;
+    private RecyclerView m_filelistView = null;
 
     private AudioRecord m_audioRecord = null;
 
@@ -84,7 +94,85 @@ public class MainActivity extends AppCompatActivity {
 
         setBtnState(true);
 
+        initFilelistViw();
     }
+
+    private View.OnClickListener mFileNameItemOnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            RecyclerView.ViewHolder viewHolder = (RecyclerView.ViewHolder) v.getTag();
+            int position = viewHolder.getAdapterPosition();
+            String filename = m_fileNames.get(position);
+
+            PopupMenu popupMenu = new PopupMenu(v.getContext(), v);
+            MenuInflater menuInflater = popupMenu.getMenuInflater();
+            menuInflater.inflate(R.menu.popup_menu_layout, popupMenu.getMenu());
+
+            popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    switch (item.getItemId()) {
+                        case R.id.play:
+                            //todo: play the audio file
+                            Log.i(TAG, "play audio file...");
+
+                            return true;
+                        case R.id.delete:
+                            //todo: delete audio file
+                            Log.i(TAG, "delete file: " + filename);
+
+
+                            return true;
+                        default:
+                            return false;
+                    }
+                }
+            });
+
+            popupMenu.show();
+
+        }
+    };
+
+
+    private void initFilelistViw() {
+        m_filelistView.setHasFixedSize(true);
+        m_layoutManager = new LinearLayoutManager(this);
+        m_filelistView.setLayoutManager(m_layoutManager);
+
+        /*
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,
+                getFileNames());
+                */
+
+        m_fileNames = new ArrayList<>();
+        m_fileNames.addAll(getFileNames());
+        m_adapter = new SimpleArrayAdapter(m_fileNames);
+        ((SimpleArrayAdapter) m_adapter).setOnItemClickListener(mFileNameItemOnClickListener);
+
+        m_filelistView.setAdapter(m_adapter);
+    }
+
+    private ArrayList<String> getFileNames() {
+        File dir = new File(this.getFilesDir() + "/fortemedia/");
+        if (!dir.exists()) {
+            dir.mkdirs();
+            return new ArrayList<>();
+        }
+
+        ArrayList<String> filenames = new ArrayList<>();
+        for (File entry : dir.listFiles()) {
+            if (entry.isFile() && entry.getName().endsWith("pcm")) {  //pcm file
+                filenames.add(entry.getName());
+            }
+        }
+
+        /*
+        ref: https://stackoverflow.com/questions/4042434/converting-arrayliststring-to-string-in-java
+         */
+        return filenames;
+    }
+
 
     private void setupHandler() {
         m_handler = new Handler() {
@@ -177,13 +265,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private RecyclerView.Adapter m_adapter;
+    private RecyclerView.LayoutManager m_layoutManager;
+    private List<String> m_fileNames;
+
     private void hookControl() {
         m_btn_start = (Button) findViewById(R.id.btnStart);
         m_btn_stop = (Button) findViewById(R.id.btnStop);
         m_txtFilepath = (TextView) findViewById(R.id.txtFilepath);
 
-        m_btnPlayStart = (Button)findViewById(R.id.btnPlayStart);
-        m_btnStopPlay = (Button)findViewById(R.id.btnStopPlay);
+        m_btnPlayStart = (Button) findViewById(R.id.btnPlayStart);
+        m_btnStopPlay = (Button) findViewById(R.id.btnStopPlay);
+        m_filelistView = (RecyclerView) findViewById(R.id.file_list);
+
+
     }
 
     AudioPlayer m_audioPlayer = null;
@@ -195,7 +290,8 @@ public class MainActivity extends AppCompatActivity {
 
                 m_shoudContinue = true;
 
-                String filename = getFileName();
+                //String filename = getFileName();
+                String filename = getInternalFileName();
                 if (filename == null) {
                     return;  //todo: show alert dialog
                 }
@@ -210,6 +306,7 @@ public class MainActivity extends AppCompatActivity {
                 int audioFormat = AUDIO_FORMAT;
 
                 int buffersize = AudioRecord.getMinBufferSize(sampleRate, audioConfig, audioFormat);
+                //android.R.layout.simple_list_item_1
 
                 DataInfo info = new DataInfo(buffersize, filename);
 
@@ -269,23 +366,30 @@ public class MainActivity extends AppCompatActivity {
                     assert (false);
                 }
 
+                m_fileNames.add(0, getFriendlyFileName(m_writeThread.getFileName()));
+                m_adapter.notifyItemInserted(0);
+                m_filelistView.scrollToPosition(0);
+
                 m_recorder = null;
                 m_writeThread = null;
 
+                //todo: remove m_filepath variable
                 if (m_filepath != null && m_filepath != "") {
                     m_txtFilepath.setText(m_filepath);
                 }
                 setBtnState(true);
 
+                //notify the adapter
+
             }
         });
 
-        m_btnPlayStart.setOnClickListener(new View.OnClickListener(){
+        m_btnPlayStart.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v){
+            public void onClick(View v) {
                 //todo: when in recording, disable play
 
-                if(m_audioPlayer == null) {
+                if (m_audioPlayer == null) {
                     AudioConfig config = AudioConfig.getDefaultConfig();
 
                     //todo: just for test
@@ -302,8 +406,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        m_btnStopPlay.setOnClickListener((v)-> {
-            if(m_audioPlayer != null){
+        m_btnStopPlay.setOnClickListener((v) -> {
+            if (m_audioPlayer != null) {
                 m_audioPlayer.stop();
                 m_audioPlayer = null;
             }
@@ -380,11 +484,11 @@ public class MainActivity extends AppCompatActivity {
 
 
                 for (int i = 0; i < perRead; i++) {
-                    tempBuffer[2*i] = (byte) (buffer[i] & 0xff);
-                    tempBuffer[2*i + 1] = (byte) ((buffer[i] >> 8) & 0xff);
+                    tempBuffer[2 * i] = (byte) (buffer[i] & 0xff);
+                    tempBuffer[2 * i + 1] = (byte) ((buffer[i] >> 8) & 0xff);
                 }
 
-                bufferedOutputStream.write(tempBuffer, 0, perRead*2);
+                bufferedOutputStream.write(tempBuffer, 0, perRead * 2);
 
                 /*
                 byteBuffer.rewind();
@@ -434,6 +538,35 @@ public class MainActivity extends AppCompatActivity {
 
         filename += "test_" + suffix + ".pcm";
         return filename;
+    }
+
+    private String getFriendlyFileName(String absoluteName) {
+        int pos = absoluteName.lastIndexOf(File.separator);
+        if (pos != -1) {
+            return absoluteName.substring(pos + 1);
+        }
+        return absoluteName;
+    }
+
+    private String getInternalFileName() {
+        File dir = new File(this.getFilesDir(), "fortemedia");
+        if (!dir.exists()) {
+            boolean ret = dir.mkdirs();
+            if (!ret) {
+                Log.e(TAG, "Create folder failed!");
+                //todo: assert wont work, delete it
+                assert (false);
+                return null;
+            }
+        }
+
+        Date date = Calendar.getInstance().getTime();
+
+        //todo: why suddenly crash? if set breakpoint here ,will exit the app? why?
+        String filename = dir.getAbsolutePath() + "/" + new SimpleDateFormat("yyyy_MM_dd_HH_ss").format(date) + ".pcm";
+        Log.i(TAG, "filename: " + filename);
+        return filename;
+
     }
 
     /* Checks if external storage is available for read and write */
